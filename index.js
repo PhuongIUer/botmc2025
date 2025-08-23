@@ -22,15 +22,7 @@ let globalIntervalId = null
 
 // ========== HÀM XÓA TERMINAL CHO TERMUX ==========
 function clearTerminal() {
-  // Phương pháp 1: Sử dụng escape sequence (hoạt động trên hầu hết terminal)
-  process.stdout.write('\x1B[2J\x1B[0f')
-  
-  // Phương pháp 2: Sử dụng lệnh hệ thống (tùy thuộc vào OS)
-  if (process.platform === 'win32') {
-    exec('cls')
-  } else {
-    exec('clear')
-  }
+  process.stdout.write('\x1B[2J\x1B[3J\x1B[H');
 }
 
 // ========== HÀM TẠO BOT ==========
