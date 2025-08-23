@@ -13,6 +13,7 @@ const botConfigs = [
   { username: 'nobody06', password: '11092003' },
   { username: 'nobody07', password: '11092003' },
   { username: 'nobody08', password: '11092003' },
+  { username: 'nobody09', password: '11092003' },
 ]
 
 const bots = []
