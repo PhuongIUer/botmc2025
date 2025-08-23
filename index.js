@@ -18,7 +18,7 @@ const botConfigs = [
 const bots = []
 
 // ========== HÀM TẠO BOT ==========
-function createBotWithDelay(config, delay, index) { // Thêm tham số index
+function createBotWithDelay(config, delay, index) {
   setTimeout(() => {
     console.log(`🚀 Khởi động bot: ${config.username}`)
     
@@ -46,27 +46,35 @@ function createBotWithDelay(config, delay, index) { // Thêm tham số index
 // ========== THIẾT LẬP SỰ KIỆN BOT ==========
 function setupBotEvents(bot) {
   let hasCompletedFirstTask = false
-  let hasCompletedSecondTask = false
-  let hasCompletedThirdTask = false
   let spawnCount = 0
+  let intervalId = null
 
   bot.on('spawn', async () => {
     spawnCount++
     console.log(`[${bot.username}] Đã spawn (lần ${spawnCount})`)
     
-    // Nếu đã hoàn thành cả 3 task thì đứng im
-    if (hasCompletedFirstTask && hasCompletedSecondTask && hasCompletedThirdTask)  {
-      console.log(`[${bot.username}] Đã hoàn thành tất cả task, đứng im...`)
+    // Nếu là spawn lần thứ 2, hủy interval cũ nếu có và thiết lập interval mới
+    if (spawnCount === 2) {
+      if (intervalId) {
+        clearInterval(intervalId)
+      }
+      
+      // Thiết lập interval để log mỗi 10 phút
+      let count = 1
+      intervalId = setInterval(() => {
+        const now = new Date()
+        const timeString = now.toLocaleTimeString('vi-VN')
+        console.log(`[${bot.username}] 10p lần ${count} : ${timeString}`)
+        count++
+      }, 10 * 60 * 1000) // 10 phút
+      
+      console.log(`[${bot.username}] Đã thiết lập log mỗi 10 phút, đứng im...`)
       return
     }
 
     // Spawn lần 1: làm task đầu tiên
     if (spawnCount === 1 && !hasCompletedFirstTask) {
       doFirstTask(bot)
-    }
-    // Spawn lần 2: làm task thứ hai và thứ ba
-    else if (spawnCount === 2 && hasCompletedFirstTask && !hasCompletedSecondTask) {
-      doSecondTask(bot)
     }
   })
 
@@ -124,47 +132,13 @@ function setupBotEvents(bot) {
     }, 3000)
   }
 
-  // ========== TASK THỨ HAI ==========
-  async function doSecondTask(bot) {
-    console.log(`[${bot.username}] Bắt đầu task thứ hai...`)
-    
-    const mcData = require('minecraft-data')(bot.version)
-    const movements = new Movements(bot, mcData)
-    bot.pathfinder.setMovements(movements)
-
-    // Đi đến 159 53 -65
-    const goal1 = new goals.GoalBlock(159, 53, -65)
-    bot.pathfinder.setGoal(goal1)
-
-    bot.once('goal_reached', async () => {
-      console.log(`[${bot.username}] Đã tới vị trí (159, 53, -65)`)
-      
-      // Đợi 1 giây trước khi làm task 3
-      setTimeout(() => {
-        doThirdTask(bot)
-      }, 1000)
-    })
-  }
-
-  // ========== TASK THỨ BA ==========
-  async function doThirdTask(bot) {
-    console.log(`[${bot.username}] Bắt đầu task thứ ba...`)
-    
-    const mcData = require('minecraft-data')(bot.version)
-    const movements = new Movements(bot, mcData)
-    bot.pathfinder.setMovements(movements)
-
-    // Quay lại 146 51 -70
-    const goal2 = new goals.GoalBlock(152, 51, -77)
-    bot.pathfinder.setGoal(goal2)
-    
-    bot.once('goal_reached', async () => {
-      console.log(`[${bot.username}] Đã quay lại vị trí (146, 51, -70)`)
-      hasCompletedThirdTask = true
-      hasCompletedSecondTask = true
-      console.log(`[${bot.username}] ✅ Đã hoàn thành tất cả task, đứng im...`)
-    })
-  }
+  // Dọn dẹp interval khi bot disconnect
+  bot.on('end', () => {
+    if (intervalId) {
+      clearInterval(intervalId)
+      console.log(`[${bot.username}] Đã dọn dẹp interval`)
+    }
+  })
 
   bot.on('kicked', reason => console.log(`[${bot.username}] Bị kick:`, reason))
   bot.on('error', err => console.log(`[${bot.username}] Lỗi:`, err))
@@ -174,12 +148,21 @@ function setupBotEvents(bot) {
 // ========== KHỞI CHẠY TẤT CẢ BOT ==========
 console.log(`🟢 Bắt đầu khởi chạy ${botConfigs.length} bot...`)
 botConfigs.forEach((config, index) => {
-  createBotWithDelay(config, index * 22000, index) // Thêm index làm tham số thứ 3
+  createBotWithDelay(config, index * 22000, index)
 })
 
 // ========== XỬ LÝ TẮT SCRIPT ==========
 process.on('SIGINT', () => {
   console.log('\n🛑 Đang tắt tất cả bot...')
-  bots.forEach(bot => bot.quit())
+  
+  // Dọn dẹp tất cả intervals trước khi thoát
+  bots.forEach(bot => {
+    // Nếu bot có interval, clear nó
+    if (bot.intervalId) {
+      clearInterval(bot.intervalId)
+    }
+    bot.quit()
+  })
+  
   setTimeout(() => process.exit(), 1000)
 })
