@@ -65,7 +65,7 @@ function setupBotEvents(bot) {
       doFirstTask(bot)
     }
     // Spawn lần 2: làm task thứ hai và thứ ba
-    else if (spawnCount === 3 && hasCompletedFirstTask && !hasCompletedSecondTask) {
+    else if (spawnCount >= 2 && hasCompletedFirstTask && !hasCompletedSecondTask) {
       doSecondTask(bot)
     }
   })
