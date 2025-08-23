@@ -155,7 +155,7 @@ function setupBotEvents(bot) {
     bot.pathfinder.setMovements(movements)
 
     // Quay lại 146 51 -70
-    const goal2 = new goals.GoalBlock(146, 51, -70)
+    const goal2 = new goals.GoalBlock(152, 51, -77)
     bot.pathfinder.setGoal(goal2)
     
     bot.once('goal_reached', async () => {
