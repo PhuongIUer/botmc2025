@@ -80,7 +80,7 @@ function setupBotEvents(bot) {
     console.log(`[${bot.username}] Đã spawn (lần ${spawnCount})`)
     
     // Nếu đã hoàn thành task đầu tiên (spawn lần 2)
-    if (spawnCount === 2 && hasCompletedFirstTask) {
+    if (spawnCount >= 2 && hasCompletedFirstTask) {
       completedBots++
       console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${botConfigs.length})`)
       checkAllBotsCompleted()
