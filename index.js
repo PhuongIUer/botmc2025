@@ -23,14 +23,7 @@ let globalIntervalId = null
 
 // ========== HÀM XÓA TERMINAL CHO TERMUX ==========
 function clearTerminal() {
-  // Sử dụng lệnh 'clear' của Termux (chạy trên Android)
-  exec('clear', (error, stdout, stderr) => {
-    if (error) {
-      // Nếu lệnh clear không hoạt động, dùng phương pháp dự phòng
-      process.stdout.write('\x1B[2J\x1B[3J\x1B[H\x1Bc')
-      process.stdout.write('\n'.repeat(50))
-    }
-  })
+  process.stdout.write('\x1B[2J\x1B[3J\x1B[H');
 }
 
 // ========== HÀM TẠO BOT ==========
