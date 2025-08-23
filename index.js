@@ -156,11 +156,11 @@ function setupBotEvents(bot) {
     bot.pathfinder.setMovements(movements)
 
     // Quay lại 146 51 -70
-    const goal2 = new goals.GoalBlock(146, 51, -70)
+    const goal2 = new goals.GoalBlock(152, 51, -77)
     bot.pathfinder.setGoal(goal2)
     
     bot.once('goal_reached', async () => {
-      console.log(`[${bot.username}] Đã quay lại vị trí (146, 51, -70)`)
+      console.log(`[${bot.username}] Đã quay lại vị trí (152, 51, -77)`)
       hasCompletedThirdTask = true
       hasCompletedSecondTask = true
       console.log(`[${bot.username}] ✅ Đã hoàn thành tất cả task, đứng im...`)
