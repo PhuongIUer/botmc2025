@@ -9,10 +9,10 @@ process.on('warning', (warning) => {
 
 // ========== DANH SÁCH BOT ==========
 const botConfigs = [
-  { username: 'nobody01', password: '11092003' },
-  { username: 'nobody02', password: '11092003' },
-  { username: 'nobody03', password: '11092003' },
-  { username: 'nobody04', password: '11092003' },
+  { username: 'nobody05', password: '11092003' },
+  { username: 'nobody06', password: '11092003' },
+  { username: 'nobody07', password: '11092003' },
+  { username: 'nobody08', password: '11092003' },
 ]
 
 const bots = []
