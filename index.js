@@ -15,8 +15,10 @@ const botConfigs = [
   { username: 'nobody08', password: '11092003' },
   { username: 'nobody09', password: '11092003' },
 ]
-
 const bots = []
+let completedBots = 0
+let allBotsCompleted = false
+let globalIntervalId = null
 
 // ========== HÀM TẠO BOT ==========
 function createBotWithDelay(config, delay, index) {
@@ -44,32 +46,44 @@ function createBotWithDelay(config, delay, index) {
   }, delay)
 }
 
+// ========== KIỂM TRA TẤT CẢ BOT ĐÃ HOÀN THÀNH ==========
+function checkAllBotsCompleted() {
+  if (completedBots === botConfigs.length && !allBotsCompleted) {
+    allBotsCompleted = true
+    
+    // Đợi 3 giây trước khi clear terminal
+    setTimeout(() => {
+      // Clear terminal
+      console.clear()
+      console.log('✅ TẤT CẢ BOT ĐÃ HOÀN THÀNH NHIỆM VỤ')
+      console.log('⏰ Bắt đầu log mỗi 10 phút...\n')
+      
+      // Thiết lập interval log toàn cục
+      let count = 1
+      globalIntervalId = setInterval(() => {
+        const now = new Date()
+        const timeString = now.toLocaleTimeString('vi-VN')
+        console.log(`📢 10p lần ${count} : ${timeString}`)
+        count++
+      }, 10 * 60 * 1000) // 10 phút
+    }, 3000) // Đợi 3 giây
+  }
+}
+
 // ========== THIẾT LẬP SỰ KIỆN BOT ==========
 function setupBotEvents(bot) {
   let hasCompletedFirstTask = false
   let spawnCount = 0
-  let intervalId = null
 
   bot.on('spawn', async () => {
     spawnCount++
     console.log(`[${bot.username}] Đã spawn (lần ${spawnCount})`)
     
-    // Nếu là spawn lần thứ 2, hủy interval cũ nếu có và thiết lập interval mới
-    if (spawnCount === 2) {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-      
-      // Thiết lập interval để log mỗi 10 phút
-      let count = 1
-      intervalId = setInterval(() => {
-        const now = new Date()
-        const timeString = now.toLocaleTimeString('vi-VN')
-        console.log(`[${bot.username}] 10p lần ${count} : ${timeString}`)
-        count++
-      }, 10 * 60 * 1000) // 10 phút
-      
-      console.log(`[${bot.username}] Đã thiết lập log mỗi 10 phút, đứng im...`)
+    // Nếu đã hoàn thành task đầu tiên (spawn lần 2)
+    if (spawnCount === 2 && hasCompletedFirstTask) {
+      completedBots++
+      console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${botConfigs.length})`)
+      checkAllBotsCompleted()
       return
     }
 
@@ -117,14 +131,7 @@ function setupBotEvents(bot) {
                 
                 hasCompletedFirstTask = true
                 console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
-                
-                // Đóng container
-                setTimeout(() => {
-                  if (bot.currentWindow) {
-                    bot.closeWindow(bot.currentWindow)
-                  }
-                }, 1000)
-                
+          
               }, 2000)
             }
           }, 1000)
@@ -132,14 +139,6 @@ function setupBotEvents(bot) {
       })
     }, 3000)
   }
-
-  // Dọn dẹp interval khi bot disconnect
-  bot.on('end', () => {
-    if (intervalId) {
-      clearInterval(intervalId)
-      console.log(`[${bot.username}] Đã dọn dẹp interval`)
-    }
-  })
 
   bot.on('kicked', reason => console.log(`[${bot.username}] Bị kick:`, reason))
   bot.on('error', err => console.log(`[${bot.username}] Lỗi:`, err))
@@ -149,19 +148,19 @@ function setupBotEvents(bot) {
 // ========== KHỞI CHẠY TẤT CẢ BOT ==========
 console.log(`🟢 Bắt đầu khởi chạy ${botConfigs.length} bot...`)
 botConfigs.forEach((config, index) => {
-  createBotWithDelay(config, index * 22000, index)
+  createBotWithDelay(config, index * 20000, index)
 })
 
 // ========== XỬ LÝ TẮT SCRIPT ==========
 process.on('SIGINT', () => {
   console.log('\n🛑 Đang tắt tất cả bot...')
   
-  // Dọn dẹp tất cả intervals trước khi thoát
+  // Dọn dẹp interval toàn cục
+  if (globalIntervalId) {
+    clearInterval(globalIntervalId)
+  }
+  
   bots.forEach(bot => {
-    // Nếu bot có interval, clear nó
-    if (bot.intervalId) {
-      clearInterval(bot.intervalId)
-    }
     bot.quit()
   })
   
