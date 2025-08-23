@@ -149,21 +149,7 @@ function setupBotEvents(bot) {
                 
                 hasCompletedFirstTask = true
                 console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
-                
-                // Đóng container
-                setTimeout(() => {
-                  if (bot.currentWindow) {
-                    bot.closeWindow(bot.currentWindow)
-                  }
-                  
-                  // Thoát để spawn lại
-                  setTimeout(() => {
-                    bot.quit()
-                    console.log(`[${bot.username}] Đã thoát để spawn lại`)
-                  }, 1000)
-                  
-                }, 1000)
-                
+                               
               }, 2000)
             }
           }, 1000)
