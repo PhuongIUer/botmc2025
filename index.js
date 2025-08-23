@@ -20,6 +20,19 @@ let completedBots = 0
 let allBotsCompleted = false
 let globalIntervalId = null
 
+// ========== HÀM XÓA TERMINAL CHO TERMUX ==========
+function clearTerminal() {
+  // Phương pháp 1: Sử dụng escape sequence (hoạt động trên hầu hết terminal)
+  process.stdout.write('\x1B[2J\x1B[0f')
+  
+  // Phương pháp 2: Sử dụng lệnh hệ thống (tùy thuộc vào OS)
+  if (process.platform === 'win32') {
+    exec('cls')
+  } else {
+    exec('clear')
+  }
+}
+
 // ========== HÀM TẠO BOT ==========
 function createBotWithDelay(config, delay, index) {
   setTimeout(() => {
@@ -53,13 +66,18 @@ function checkAllBotsCompleted() {
     
     // Đợi 3 giây trước khi clear terminal
     setTimeout(() => {
-      // Clear terminal
-      console.clear()
+      // Xóa terminal trong Termux
+      clearTerminal()
       console.log('✅ TẤT CẢ BOT ĐÃ HOÀN THÀNH NHIỆM VỤ')
       console.log('⏰ Bắt đầu log mỗi 10 phút...\n')
       
+      // Log ngay lần đầu tiên
+      const now = new Date()
+      const timeString = now.toLocaleTimeString('vi-VN')
+      console.log(`📢 10p lần 1 : ${timeString}`)
+      
       // Thiết lập interval log toàn cục
-      let count = 1
+      let count = 2
       globalIntervalId = setInterval(() => {
         const now = new Date()
         const timeString = now.toLocaleTimeString('vi-VN')
@@ -80,7 +98,7 @@ function setupBotEvents(bot) {
     console.log(`[${bot.username}] Đã spawn (lần ${spawnCount})`)
     
     // Nếu đã hoàn thành task đầu tiên (spawn lần 2)
-    if (spawnCount === 2 && hasCompletedFirstTask) {
+    if (spawnCount >= 2 && hasCompletedFirstTask) {
       completedBots++
       console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${botConfigs.length})`)
       checkAllBotsCompleted()
@@ -131,7 +149,7 @@ function setupBotEvents(bot) {
                 
                 hasCompletedFirstTask = true
                 console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
-          
+                               
               }, 2000)
             }
           }, 1000)
@@ -148,7 +166,7 @@ function setupBotEvents(bot) {
 // ========== KHỞI CHẠY TẤT CẢ BOT ==========
 console.log(`🟢 Bắt đầu khởi chạy ${botConfigs.length} bot...`)
 botConfigs.forEach((config, index) => {
-  createBotWithDelay(config, index * 20000, index)
+  createBotWithDelay(config, index * 30000, index)
 })
 
 // ========== XỬ LÝ TẮT SCRIPT ==========
