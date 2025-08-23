@@ -148,7 +148,7 @@ function setupBotEvents(bot) {
 // ========== KHỞI CHẠY TẤT CẢ BOT ==========
 console.log(`🟢 Bắt đầu khởi chạy ${botConfigs.length} bot...`)
 botConfigs.forEach((config, index) => {
-  createBotWithDelay(config, index * 20000, index)
+  createBotWithDelay(config, index * 30000, index)
 })
 
 // ========== XỬ LÝ TẮT SCRIPT ==========
