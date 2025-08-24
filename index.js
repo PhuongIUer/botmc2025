@@ -109,7 +109,7 @@ function setupBotEvents(bot) {
   // ========== TASK ĐẦU TIÊN ==========
   async function doFirstTask(bot) {
     console.log(`[${bot.username}] Bắt đầu task đầu tiên...`)
-
+    let isWindowOpen = false;
     setTimeout(() => {
       bot.chat(`/login ${bot.botConfig.password}`)
       console.log(`[${bot.username}] Đã login`)
@@ -128,13 +128,14 @@ function setupBotEvents(bot) {
         
         bot.setQuickBarSlot(4)
         console.log(`[${bot.username}] Đã cầm đồ ở ô thứ 5`)
-
-        setTimeout(() => {
+        while(!isWindowOpen) {
+          setTimeout(() => {
           bot.activateItem()
           console.log(`[${bot.username}] Đã chuột phải`)
 
           setTimeout(() => {
             if (bot.currentWindow) {
+              isWindowOpen = true;
               bot.clickWindow(22, 0, 0)
               console.log(`[${bot.username}] Đã click ô cột 5 hàng 3`)
               
@@ -146,9 +147,13 @@ function setupBotEvents(bot) {
                 console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
                                
               }, 2000)
+            } else {
+              console.log(`[${bot.username}] Không mở được hub. Đang thử lại`)
+              isWindowOpen = false;
             }
-          }, 1000)
-        }, 1000)
+          }, 2000)
+        }, 3000)
+        }
       })
     }, 3000)
   }
