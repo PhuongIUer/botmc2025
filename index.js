@@ -131,7 +131,7 @@ function setupBotEvents(bot) {
           console.log(`[${bot.username}] Đã chuột phải`)
 
           setTimeout(() => {
-            if (bot.currentWindow) {
+
               bot.clickWindow(22, 0, 0)
               console.log(`[${bot.username}] Đã click ô cột 5 hàng 3`)
               
@@ -143,7 +143,7 @@ function setupBotEvents(bot) {
                 console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
                                
               }, 2000)
-            }
+
           }, 1000)
         }, 1000)
       })
