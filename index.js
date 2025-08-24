@@ -35,7 +35,9 @@ function createBotWithDelay(config, delay, index) {
       host: 'luckyvn.com',
       port: 25565,
       username: config.username,
-      version: '1.21.4'
+      version: '1.21.4',
+      keepAlive: true,         
+      checkTimeoutInterval: 120 * 1000  
     }
 
     const bot = mineflayer.createBot(botOptions)
