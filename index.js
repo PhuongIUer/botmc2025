@@ -16,56 +16,14 @@ const botConfigs = [
   { username: 'nobody09', password: '11092003' },
 ]
 
-let bots = []
+const bots = []
 let completedBots = 0
 let allBotsCompleted = false
 let globalIntervalId = null
-let isRestarting = false
 
 // ========== HÀM XÓA TERMINAL CHO TERMUX ==========
 function clearTerminal() {
   process.stdout.write('\x1B[2J\x1B[3J\x1B[H');
-}
-
-// ========== HÀM DỪNG TẤT CẢ BOT ==========
-function stopAllBots() {
-  console.log('🛑 Đang dừng tất cả bot...')
-  
-  // Dọn dẹp interval toàn cục
-  if (globalIntervalId) {
-    clearInterval(globalIntervalId)
-    globalIntervalId = null
-  }
-  
-  // Ngắt kết nối tất cả bot
-  bots.forEach(bot => {
-    if (bot && !bot.ended) {
-      bot.quit()
-    }
-  })
-  
-  bots = []
-  completedBots = 0
-  allBotsCompleted = false
-}
-
-// ========== HÀM KHỞI ĐỘNG LẠI TẤT CẢ BOT ==========
-function restartAllBots() {
-  if (isRestarting) return
-  isRestarting = true
-  
-  console.log('🔄 Phát hiện bot bị disconnect, khởi động lại toàn bộ hệ thống...')
-  
-  stopAllBots()
-  setTimeout(() => {},5000)
-  // Đợi một chút trước khi khởi động lại
-  setTimeout(() => {
-    isRestarting = false
-    console.log(`🟢 Bắt đầu khởi chạy lại ${botConfigs.length} bot...`)
-    botConfigs.forEach((config, index) => {
-      createBotWithDelay(config, index * 35000, index)
-    })
-  }, 30000)
 }
 
 // ========== HÀM TẠO BOT ==========
@@ -148,31 +106,6 @@ function setupBotEvents(bot) {
     }
   })
 
-  // ========== XỬ LÝ SỰ KIỆN DISCONNECT/KICK ==========
-  bot.on('kicked', (reason) => {
-    console.log(`[${bot.username}] Bị kick:`, reason)
-    restartAllBots()
-  })
-  
-  bot.on('error', (err) => {
-    console.log(`[${bot.username}] Lỗi:`, err)
-    if (!isRestarting) {
-      restartAllBots()
-    }
-  })
-  
-  bot.on('end', () => {
-    console.log(`[${bot.username}] Đã ngắt kết nối`)
-    if (!isRestarting) {
-      // Kiểm tra xem có phải là disconnect tự nguyện không
-      setTimeout(() => {
-        if (!isRestarting && !bot.manuallyDisconnected) {
-          restartAllBots()
-        }
-      }, 1000)
-    }
-  })
-
   // ========== TASK ĐẦU TIÊN ==========
   async function doFirstTask(bot) {
     console.log(`[${bot.username}] Bắt đầu task đầu tiên...`)
@@ -219,23 +152,30 @@ function setupBotEvents(bot) {
       })
     }, 3000)
   }
+
+  bot.on('kicked', reason => console.log(`[${bot.username}] Bị kick:`, reason))
+  bot.on('error', err => console.log(`[${bot.username}] Lỗi:`, err))
+  bot.on('end', () => console.log(`[${bot.username}] Đã ngắt kết nối`))
 }
 
 // ========== KHỞI CHẠY TẤT CẢ BOT ==========
 console.log(`🟢 Bắt đầu khởi chạy ${botConfigs.length} bot...`)
 botConfigs.forEach((config, index) => {
-  createBotWithDelay(config, index * 35000, index)
+  createBotWithDelay(config, index * 30000, index)
 })
 
 // ========== XỬ LÝ TẮT SCRIPT ==========
 process.on('SIGINT', () => {
   console.log('\n🛑 Đang tắt tất cả bot...')
   
-  // Đánh dấu là disconnect tự nguyện để không trigger restart
+  // Dọn dẹp interval toàn cục
+  if (globalIntervalId) {
+    clearInterval(globalIntervalId)
+  }
+  
   bots.forEach(bot => {
-    bot.manuallyDisconnected = true
+    bot.quit()
   })
   
-  stopAllBots()
   setTimeout(() => process.exit(), 1000)
 })
