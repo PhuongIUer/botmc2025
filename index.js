@@ -69,7 +69,7 @@ function checkAllBotsCompleted() {
       // Log ngay lần đầu tiên
       const now = new Date()
       const timeString = now.toLocaleTimeString('vi-VN')
-      console.log(`📢 10p lần 1 : ${timeString}`)
+      console.log(`📢 Bây giờ là : ${timeString}`)
       
       // Thiết lập interval log toàn cục
       let count = 2
