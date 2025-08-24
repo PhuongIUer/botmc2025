@@ -57,7 +57,7 @@ function restartAllBots() {
   console.log('🔄 Phát hiện bot bị disconnect, khởi động lại toàn bộ hệ thống...')
   
   stopAllBots()
-  
+  setTimeout(() => {},5000)
   // Đợi một chút trước khi khởi động lại
   setTimeout(() => {
     isRestarting = false
@@ -65,7 +65,7 @@ function restartAllBots() {
     botConfigs.forEach((config, index) => {
       createBotWithDelay(config, index * 35000, index)
     })
-  }, 5000)
+  }, 30000)
 }
 
 // ========== HÀM TẠO BOT ==========
