@@ -205,7 +205,7 @@ botConfigs.forEach((config, index) => {
 // ========== THIẾT LẬP RESET ĐỊNH KỲ 40 PHÚT ==========
 resetIntervalId = setInterval(() => {
   resetAllBots()
-}, 40 * 60 * 1000) // 40 phút
+}, 41 * 60 * 1000) // 40 phút
 
 // ========== XỬ LÝ TẮT SCRIPT ==========
 process.on('SIGINT', () => {
