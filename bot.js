@@ -88,6 +88,54 @@ function createBotWithDelay(config, delay, index) {
   }, delay)
 }
 
+function startHotbarLogger(bot) {
+  console.log(`[${bot.username}] 📦 Bắt đầu log thông tin hotbar mỗi 30 giây`)
+
+  const logHotbarItems = () => {
+    // Hotbar: slots 36 đến 44
+    const hotbarSlots = Array.from({ length: 45 }, (_, i) => i )
+    const items = hotbarSlots.map(slot => {
+      const item = bot.inventory.slots[slot]
+      return item ? `${item.name} (x${item.count})` : 'Trống'
+    })
+    
+    console.log(`[${bot.username}] 🎒 HOTBAR: ${items.join(' | ')}`)
+  }
+
+  // Thiết lập interval mỗi 30 giây
+  return setInterval(logHotbarItems, 30 * 1000)
+}
+
+// ========== HÀM TỰ ĐỘNG ĂN STEAK ==========
+async function autoEatSteak(bot) {
+  try {
+    // Nếu food <= 12 thì ăn
+    if (bot.food <= 12) {
+      console.log(`[${bot.username}] 🍗 Đang đói (${bot.food}/20), tìm steak...`)
+
+      // Slot cuối cùng của inventory = 44
+      const steak = bot.inventory.slots[44]
+
+      if (!steak || steak.name !== 'cooked_beef') {
+        console.log(`[${bot.username}] ❌ Không có steak ở slot cuối`)
+        return
+      }
+
+      // Equip steak lên tay
+      await bot.equip(steak, 'hand')
+
+      // Ăn
+      await bot.consume()
+      console.log(`[${bot.username}] ✅ Đã ăn steak`)
+
+      // Chỉnh lại về hotbar slot 1 (index = 0)
+      bot.setQuickBarSlot(0)
+      console.log(`[${bot.username}] 🔄 Đã đổi lại về hotbar slot 1`)
+    }
+  } catch (err) {
+    console.log(`[${bot.username}] ⚠️ Lỗi khi auto ăn:`, err)
+  }
+}
 // ========== TÌM ENTITY GẦN NHẤT NGOẠI TRỪ PLAYER ==========
 function findNearestEntityExceptPlayer(bot) {
   const entityFilter = e => e.type !== 'player' && e.displayName !== 'Text Display' && 
@@ -112,14 +160,12 @@ function startRandomAttacking(bot) {
       bot.lookAt(entity.position.offset(0, 1, 0))
       console.log(`[${bot.username}] 👀 Đang nhìn vào ${entity.displayName}`)
       
-      // Tấn công entity (slash)
-      bot.swingArm()
       bot.attack(entity)
       attackCount++
       console.log(`[${bot.username}] ⚔️ Đã tấn công ${entity.displayName} (lần ${attackCount})`)
       
       // Hiển thị thông tin entity (mỗi 10 lần tấn công)
-      if (attackCount % 10 === 0) {
+      if (attackCount % 1 === 0) {
         const distance = entity.position.distanceTo(bot.entity.position)
         console.log(`[${bot.username}] 📍 ${entity.displayName} - Khoảng cách: ${distance.toFixed(1)}m - Vị trí: X:${Math.round(entity.position.x)} Y:${Math.round(entity.position.y)} Z:${Math.round(entity.position.z)}`)
       }
@@ -129,7 +175,7 @@ function startRandomAttacking(bot) {
   }
 
   const startAttackInterval = () => {
-    const delay = 3200 + Math.random() * 120
+    const delay = 3000 + Math.random() * 220
     attackInterval = setInterval(attack, delay)
     console.log(`[${bot.username}] ⏰ Thiết lập tấn công mỗi ${delay.toFixed(0)}ms`)
   }
@@ -191,19 +237,27 @@ function setupBotEvents(bot) {
     spawnCount++
     console.log(`[${bot.username}] Đã spawn (lần ${spawnCount})`)
     
-    // Nếu đã hoàn thành task đầu tiên (spawn lần 2)
-    if (spawnCount >= 2 && hasCompletedFirstTask) {
-      completedBots++
-      console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${botConfigs.length})`)
-      
-      // Nếu là bot đặc biệt (ShiKuu), bắt đầu tấn công entity
-      if (bot.botConfig.special && !stopAttacking) {
-        stopAttacking = startRandomAttacking(bot)
-      }
-      
-      checkAllBotsCompleted()
-      return
+  if (spawnCount >= 2 && hasCompletedFirstTask) {
+    completedBots++
+    console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${botConfigs.length})`)
+    
+    // Bắt đầu log hotbar mỗi 1 phút
+    bot.hotbarInterval = startHotbarLogger(bot)
+    
+    // Bắt đầu kiểm tra đói mỗi 5 giây
+    bot.hungerInterval = setInterval(() => autoEatSteak(bot), 15000)
+    console.log(`[${bot.username}] 🍗 Đã bật auto eat (kiểm tra mỗi 15s)`)
+
+    bot.setQuickBarSlot(0)
+    console.log(`[${bot.username}] Đã cầm đồ ở ô thứ 1`)
+    // Nếu là bot đặc biệt (ShiKuu), bắt đầu tấn công entity
+    if (bot.botConfig.special && !stopAttacking) {
+      stopAttacking = startRandomAttacking(bot)
     }
+    
+    checkAllBotsCompleted()
+    return
+  }
 
     // Spawn lần 1: làm task đầu tiên
     if (spawnCount === 1 && !hasCompletedFirstTask) {
@@ -261,16 +315,25 @@ function setupBotEvents(bot) {
   bot.on('kicked', reason => {
     console.log(`[${bot.username}] Bị kick:`, reason)
     if (stopAttacking) stopAttacking()
+    if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
+    if (bot.hungerInterval) clearInterval(bot.hungerInterval)
+    if (bot.attackInterval) clearInterval(bot.attackInterval)
   })
-  
+
   bot.on('error', err => {
     console.log(`[${bot.username}] Lỗi:`, err)
     if (stopAttacking) stopAttacking()
+    if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
+    if (bot.hungerInterval) clearInterval(bot.hungerInterval)
+    if (bot.attackInterval) clearInterval(bot.attackInterval)
   })
-  
+
   bot.on('end', () => {
     console.log(`[${bot.username}] Đã ngắt kết nối`)
     if (stopAttacking) stopAttacking()
+    if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
+    if (bot.hungerInterval) clearInterval(bot.hungerInterval)
+    if (bot.attackInterval) clearInterval(bot.attackInterval)
   })
 }
 
