@@ -25,6 +25,42 @@ const processedMessages = new Set()
 const messageTimestamps = new Map()
 const MESSAGE_TIMEOUT = 5000 // 5 giây
 
+async function resetAllBots() {
+  console.log('🔄 Bắt đầu reset tất cả bot...')
+  
+  // Dọn dẹp interval toàn cục nếu có
+  if (globalIntervalId) {
+    clearInterval(globalIntervalId)
+    globalIntervalId = null
+  }
+  
+  // Ngắt kết nối tất cả bot
+  for (const bot of bots) {
+    try {
+      if (bot && typeof bot.quit === 'function') {
+        bot.quit()
+        console.log(`[${bot.username}] Đã ngắt kết nối`)
+      }
+    } catch (err) {
+      console.log(`Lỗi khi ngắt kết nối bot: ${err.message}`)
+    }
+  }
+  
+  // Reset biến toàn cục
+  bots = []
+  completedBots = 0
+  allBotsCompleted = false
+  
+  // Đợi một chút để đảm bảo tất cả bot đã ngắt kết nối
+  await new Promise(resolve => setTimeout(resolve, 5000))
+  
+  // Khởi động lại tất cả bot
+  console.log('🔄 Khởi động lại tất cả bot...')
+  botConfigs.forEach((config, index) => {
+    createBotWithDelay(config, index * 30000, index)
+  })
+}
+
 function simpleHash(str) {
   let hash = 0
   for (let i = 0; i < str.length; i++) {
@@ -207,8 +243,14 @@ function setupBotEvents(bot) {
     }, 3000)
   }
 
-  bot.on('kicked', reason => console.log(`[${bot.username}] Bị kick:`, reason))
-  bot.on('error', err => console.log(`[${bot.username}] Lỗi:`, err))
+  bot.on('kicked', reason => {
+    console.log(`[${bot.username}] Bị kick:`, reason)
+    resetAllBots()
+  })
+  bot.on('error', err => {
+    console.log(`[${bot.username}] Lỗi:`, err)
+    resetAllBots()
+  })
   bot.on('end', () => console.log(`[${bot.username}] Đã ngắt kết nối`))
 }
 

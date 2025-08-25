@@ -139,7 +139,7 @@ async function autoEatSteak(bot) {
 // ========== TÌM ENTITY GẦN NHẤT NGOẠI TRỪ PLAYER ==========
 function findNearestEntityExceptPlayer(bot) {
   const entityFilter = e => e.type !== 'player' && e.displayName !== 'Text Display' && 
-                          e.position.distanceTo(bot.entity.position) < 16
+                          e.position.distanceTo(bot.entity.position) < 5 
   
   const entity = bot.nearestEntity(entityFilter)
   return entity
@@ -147,33 +147,82 @@ function findNearestEntityExceptPlayer(bot) {
 
 // ========== TẤN CÔNG ENTITY NGẪU NHIÊN ==========
 function startRandomAttacking(bot) {
-  console.log(`[${bot.username}] 🗡️ Bắt đầu chế độ tấn công entity ngẫu nhiên`)
+  console.log(`[${bot.username}] 🗡️ Bắt đầu chế độ tấn công "giống người"`)
 
   let attackInterval = null
   let resetAttackInterval = null
   let attackCount = 0
 
-  const attack = () => {
+  const attack = async () => {
     const entity = findNearestEntityExceptPlayer(bot)
-    if (entity) {
-      bot.lookAt(entity.position.offset(0, 1, 0))
-      const distance = entity.position.distanceTo(bot.entity.position)
-      console.log(`[${bot.username}] 📍 ${entity.displayName} - Khoảng cách: ${distance.toFixed(1)}m - Vị trí: X:${Math.round(entity.position.x)} Y:${Math.round(entity.position.y)} Z:${Math.round(entity.position.z)}`)
+    if (!entity) return
+
+    // Nhìn vào entity
+    await bot.lookAt(entity.position.offset(0, 1, 0))
+    const distance = entity.position.distanceTo(bot.entity.position)
+    console.log(
+      `[${bot.username}] 📍 ${entity.displayName} - Khoảng cách: ${distance.toFixed(1)}m - Vị trí: X:${Math.round(entity.position.x)} Y:${Math.round(entity.position.y)} Z:${Math.round(entity.position.z)}`
+    )
+    if (entity.displayName === 'Armor Stand') {
+        setTimeout(async () => {  
+        bot.setQuickBarSlot(4)
+        console.log(`[${bot.username}] Đã cầm đồ ở ô thứ 5`)
+        setTimeout(() => {
+          bot.activateItem()
+          console.log(`[${bot.username}] Đã chuột phải`)
+
+          setTimeout(() => {
+            if (bot.currentWindow) {
+              bot.clickWindow(22, 0, 0)
+              console.log(`[${bot.username}] Đã click ô cột 5 hàng 3`)
+              
+              setTimeout(() => {
+                bot.clickWindow(30, 0, 0)
+                console.log(`[${bot.username}] Đã click ô cột 4 hàng 4`)
+                
+                hasCompletedFirstTask = true
+                console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
+                               
+              }, 2000)
+            } else 
+              console.log(`[${bot.username}]  Không mở được hub`)
+          }, 2000)
+        }, 3000)
+      })
+      return
+    }
+
+    const cycle = attackCount % 60 // 0 → 99
+
+    if (cycle < 50) {
+      // 50 đòn đầu: CRITICAL
+      bot.setControlState('jump', true)
+      setTimeout(() => bot.setControlState('jump', false), 100)
+
+      setTimeout(() => {
+        if (bot.entity.onGround) return
+        bot.attack(entity)
+        attackCount++
+        console.log(`[${bot.username}] 💥 Critical hit vào ${entity.displayName} (lần ${attackCount})`)
+      }, 400)
+
+    } else {
+      // 50 đòn sau: NORMAL
       bot.attack(entity)
       attackCount++
-      console.log(`[${bot.username}] ⚔️ Đã tấn công ${entity.displayName} (lần ${attackCount})`)
+      console.log(`[${bot.username}] 🗡️ Normal hit vào ${entity.displayName} (lần ${attackCount})`)
     }
   }
 
   const startAttackInterval = () => {
-    const delay = 3000 + Math.random() * 220
+    const delay = 3000 + Math.random() * 500 // 2s → 3.5s
     attackInterval = setInterval(attack, delay)
-    console.log(`[${bot.username}] ⏰ Thiết lập tấn công mỗi ${delay.toFixed(0)}ms`)
+    console.log(`[${bot.username}] ⏰ Tấn công mỗi ~${delay.toFixed(0)}ms`)
   }
 
   startAttackInterval()
 
-  // interval phụ để reset
+  // Reset interval mỗi 30 giây để delay thay đổi
   resetAttackInterval = setInterval(() => {
     if (attackInterval) {
       clearInterval(attackInterval)
@@ -181,7 +230,7 @@ function startRandomAttacking(bot) {
     }
   }, 30000)
 
-  // Trả về hàm stop
+  // Hàm dừng
   return () => {
     if (attackInterval) {
       clearInterval(attackInterval)
@@ -191,10 +240,9 @@ function startRandomAttacking(bot) {
       clearInterval(resetAttackInterval)
       resetAttackInterval = null
     }
-    console.log(`[${bot.username}] 🛑 Đã dừng tấn công - Tổng số lần tấn công: ${attackCount}`)
+    console.log(`[${bot.username}] 🛑 Dừng tấn công - Tổng số lần tấn công: ${attackCount}`)
   }
 }
-
 
 // ========== KIỂM TRA TẤT CẢ BOT ĐÃ HOÀN THÀNH ==========
 function checkAllBotsCompleted() {
@@ -321,6 +369,7 @@ function setupBotEvents(bot) {
     if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
     if (bot.hungerInterval) clearInterval(bot.hungerInterval)
     if (bot.attackInterval) clearInterval(bot.attackInterval)
+    resetAllBots()
   })
 
   bot.on('error', err => {
