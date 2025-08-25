@@ -16,14 +16,52 @@ const botConfigs = [
   { username: 'nobody09', password: '11092003' },
 ]
 
-const bots = []
+let bots = []
 let completedBots = 0
 let allBotsCompleted = false
 let globalIntervalId = null
+let resetIntervalId = null
 
 // ========== HÀM XÓA TERMINAL CHO TERMUX ==========
 function clearTerminal() {
   process.stdout.write('\x1B[2J\x1B[3J\x1B[H');
+}
+
+// ========== HÀM RESET TẤT CẢ BOT ==========
+async function resetAllBots() {
+  console.log('🔄 Bắt đầu reset tất cả bot...')
+  
+  // Dọn dẹp interval toàn cục nếu có
+  if (globalIntervalId) {
+    clearInterval(globalIntervalId)
+    globalIntervalId = null
+  }
+  
+  // Ngắt kết nối tất cả bot
+  for (const bot of bots) {
+    try {
+      if (bot && typeof bot.quit === 'function') {
+        bot.quit()
+        console.log(`[${bot.username}] Đã ngắt kết nối`)
+      }
+    } catch (err) {
+      console.log(`Lỗi khi ngắt kết nối bot: ${err.message}`)
+    }
+  }
+  
+  // Reset biến toàn cục
+  bots = []
+  completedBots = 0
+  allBotsCompleted = false
+  
+  // Đợi một chút để đảm bảo tất cả bot đã ngắt kết nối
+  await new Promise(resolve => setTimeout(resolve, 10000))
+  
+  // Khởi động lại tất cả bot
+  console.log('🔄 Khởi động lại tất cả bot...')
+  botConfigs.forEach((config, index) => {
+    createBotWithDelay(config, index * 30000, index)
+  })
 }
 
 // ========== HÀM TẠO BOT ==========
@@ -164,17 +202,28 @@ botConfigs.forEach((config, index) => {
   createBotWithDelay(config, index * 30000, index)
 })
 
+// ========== THIẾT LẬP RESET ĐỊNH KỲ 40 PHÚT ==========
+resetIntervalId = setInterval(() => {
+  resetAllBots()
+}, 40 * 60 * 1000) // 40 phút
+
 // ========== XỬ LÝ TẮT SCRIPT ==========
 process.on('SIGINT', () => {
   console.log('\n🛑 Đang tắt tất cả bot...')
   
-  // Dọn dẹp interval toàn cục
+  // Dọn dẹp tất cả interval
   if (globalIntervalId) {
     clearInterval(globalIntervalId)
   }
+  if (resetIntervalId) {
+    clearInterval(resetIntervalId)
+  }
   
+  // Ngắt kết nối tất cả bot
   bots.forEach(bot => {
-    bot.quit()
+    if (bot && typeof bot.quit === 'function') {
+      bot.quit()
+    }
   })
   
   setTimeout(() => process.exit(), 1000)
