@@ -148,29 +148,20 @@ function findNearestEntityExceptPlayer(bot) {
 // ========== TẤN CÔNG ENTITY NGẪU NHIÊN ==========
 function startRandomAttacking(bot) {
   console.log(`[${bot.username}] 🗡️ Bắt đầu chế độ tấn công entity ngẫu nhiên`)
-  
+
   let attackInterval = null
+  let resetAttackInterval = null
   let attackCount = 0
-  
+
   const attack = () => {
     const entity = findNearestEntityExceptPlayer(bot)
-    
     if (entity) {
-      // Nhìn về phía entity
       bot.lookAt(entity.position.offset(0, 1, 0))
-      console.log(`[${bot.username}] 👀 Đang nhìn vào ${entity.displayName}`)
-      
+      const distance = entity.position.distanceTo(bot.entity.position)
+      console.log(`[${bot.username}] 📍 ${entity.displayName} - Khoảng cách: ${distance.toFixed(1)}m - Vị trí: X:${Math.round(entity.position.x)} Y:${Math.round(entity.position.y)} Z:${Math.round(entity.position.z)}`)
       bot.attack(entity)
       attackCount++
       console.log(`[${bot.username}] ⚔️ Đã tấn công ${entity.displayName} (lần ${attackCount})`)
-      
-      // Hiển thị thông tin entity (mỗi 10 lần tấn công)
-      if (attackCount % 1 === 0) {
-        const distance = entity.position.distanceTo(bot.entity.position)
-        console.log(`[${bot.username}] 📍 ${entity.displayName} - Khoảng cách: ${distance.toFixed(1)}m - Vị trí: X:${Math.round(entity.position.x)} Y:${Math.round(entity.position.y)} Z:${Math.round(entity.position.z)}`)
-      }
-    } else {
-      console.log(`[${bot.username}] 🔍 Không tìm thấy entity gần đó`)
     }
   }
 
@@ -181,22 +172,29 @@ function startRandomAttacking(bot) {
   }
 
   startAttackInterval()
-  
-  setInterval(() => {
+
+  // interval phụ để reset
+  resetAttackInterval = setInterval(() => {
     if (attackInterval) {
       clearInterval(attackInterval)
       startAttackInterval()
     }
   }, 30000)
-  
-  // Trả về hàm dừng tấn công
+
+  // Trả về hàm stop
   return () => {
     if (attackInterval) {
       clearInterval(attackInterval)
-      console.log(`[${bot.username}] 🛑 Đã dừng tấn công - Tổng số lần tấn công: ${attackCount}`)
+      attackInterval = null
     }
+    if (resetAttackInterval) {
+      clearInterval(resetAttackInterval)
+      resetAttackInterval = null
+    }
+    console.log(`[${bot.username}] 🛑 Đã dừng tấn công - Tổng số lần tấn công: ${attackCount}`)
   }
 }
+
 
 // ========== KIỂM TRA TẤT CẢ BOT ĐÃ HOÀN THÀNH ==========
 function checkAllBotsCompleted() {
@@ -231,13 +229,14 @@ function checkAllBotsCompleted() {
 function setupBotEvents(bot) {
   let hasCompletedFirstTask = false
   let spawnCount = 0
-  let stopAttacking = null // Hàm dừng tấn công
+  bot.stopAttacking = null
+
 
   bot.on('spawn', async () => {
     spawnCount++
     console.log(`[${bot.username}] Đã spawn (lần ${spawnCount})`)
     
-  if (spawnCount >= 2 && hasCompletedFirstTask) {
+  if (spawnCount === 2 && hasCompletedFirstTask) {
     completedBots++
     console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${botConfigs.length})`)
     
@@ -251,9 +250,10 @@ function setupBotEvents(bot) {
     bot.setQuickBarSlot(0)
     console.log(`[${bot.username}] Đã cầm đồ ở ô thứ 1`)
     // Nếu là bot đặc biệt (ShiKuu), bắt đầu tấn công entity
-    if (bot.botConfig.special && !stopAttacking) {
-      stopAttacking = startRandomAttacking(bot)
+    if (bot.botConfig.special && !bot.stopAttacking) {
+      bot.stopAttacking = startRandomAttacking(bot)
     }
+
     
     checkAllBotsCompleted()
     return
@@ -314,7 +314,10 @@ function setupBotEvents(bot) {
 
   bot.on('kicked', reason => {
     console.log(`[${bot.username}] Bị kick:`, reason)
-    if (stopAttacking) stopAttacking()
+    if (bot.stopAttacking) {
+      bot.stopAttacking()
+      bot.stopAttacking = null
+    }
     if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
     if (bot.hungerInterval) clearInterval(bot.hungerInterval)
     if (bot.attackInterval) clearInterval(bot.attackInterval)
@@ -322,7 +325,10 @@ function setupBotEvents(bot) {
 
   bot.on('error', err => {
     console.log(`[${bot.username}] Lỗi:`, err)
-    if (stopAttacking) stopAttacking()
+    if (bot.stopAttacking) {
+      bot.stopAttacking()
+      bot.stopAttacking = null
+    }
     if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
     if (bot.hungerInterval) clearInterval(bot.hungerInterval)
     if (bot.attackInterval) clearInterval(bot.attackInterval)
@@ -330,7 +336,21 @@ function setupBotEvents(bot) {
 
   bot.on('end', () => {
     console.log(`[${bot.username}] Đã ngắt kết nối`)
-    if (stopAttacking) stopAttacking()
+    if (bot.stopAttacking) {
+      bot.stopAttacking()
+      bot.stopAttacking = null
+    }
+    if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
+    if (bot.hungerInterval) clearInterval(bot.hungerInterval)
+    if (bot.attackInterval) clearInterval(bot.attackInterval)
+  })
+
+    bot.on('quit', () => {
+    console.log(`[${bot.username}] Đã tự thoát`)
+    if (bot.stopAttacking) {
+      bot.stopAttacking()
+      bot.stopAttacking = null
+    }
     if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
     if (bot.hungerInterval) clearInterval(bot.hungerInterval)
     if (bot.attackInterval) clearInterval(bot.attackInterval)

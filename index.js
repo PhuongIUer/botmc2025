@@ -132,10 +132,11 @@ function setupBotEvents(bot) {
     
     // Kiểm tra xem tin nhắn này đã được xử lý bởi bot khác chưa
     const messageHash = simpleHash(chatMessage)
-    
+    const now = new Date()
+    const timeString = now.toLocaleTimeString('vi-VN')
     // Nếu tin nhắn mới
     if (!isDuplicateMessage(messageHash)) {
-      console.log(`💬 ${chatMessage}`)
+      console.log(`💬 ${timeString} | ${chatMessage}`)
       markMessageAsProcessed(messageHash)
     }
   })
