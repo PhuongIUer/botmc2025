@@ -110,7 +110,7 @@ function checkAllBotsCompleted() {
       console.log(`📢 Bây giờ là : ${timeString}`)
       
       // Thiết lập interval log toàn cục
-      let count = 2
+      let count = 1
       globalIntervalId = setInterval(() => {
         const now = new Date()
         const timeString = now.toLocaleTimeString('vi-VN')
