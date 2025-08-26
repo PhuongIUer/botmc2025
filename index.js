@@ -9,11 +9,11 @@ process.on('warning', (warning) => {
 
 // ========== DANH SÁCH BOT ==========
 const botConfigs = [
-  { username: 'tututhoi01', password: '11213' },
-  { username: 'tututhoi02', password: '11213' },
-  { username: 'tututhoi03', password: '11213' },
-  { username: 'tututhoi04', password: '11213' },
-  { username: 'tututhoi05', password: '11213' },
+  { username: 'tututhoi01', password: '112113' },
+  { username: 'tututhoi02', password: '112113' },
+  { username: 'tututhoi03', password: '112113' },
+  { username: 'tututhoi04', password: '112113' },
+  { username: 'tututhoi05', password: '112113' },
 ]
 
 let bots = []
