@@ -15,7 +15,7 @@ const botConfigs = [
   { username: 'nobody04', password: '11092003' },
 ]
 
-const bots = []
+let bots = []
 let completedBots = 0
 let allBotsCompleted = false
 let globalIntervalId = null

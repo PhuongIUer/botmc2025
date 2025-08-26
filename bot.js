@@ -164,31 +164,7 @@ function startRandomAttacking(bot) {
       `[${bot.username}] 📍 ${entity.displayName} - Khoảng cách: ${distance.toFixed(1)}m - Vị trí: X:${Math.round(entity.position.x)} Y:${Math.round(entity.position.y)} Z:${Math.round(entity.position.z)}`
     )
     if (entity.displayName === 'Armor Stand') {
-        setTimeout(async () => {  
-        bot.setQuickBarSlot(4)
-        console.log(`[${bot.username}] Đã cầm đồ ở ô thứ 5`)
-        setTimeout(() => {
-          bot.activateItem()
-          console.log(`[${bot.username}] Đã chuột phải`)
-
-          setTimeout(() => {
-            if (bot.currentWindow) {
-              bot.clickWindow(22, 0, 0)
-              console.log(`[${bot.username}] Đã click ô cột 5 hàng 3`)
-              
-              setTimeout(() => {
-                bot.clickWindow(30, 0, 0)
-                console.log(`[${bot.username}] Đã click ô cột 4 hàng 4`)
-                
-                hasCompletedFirstTask = true
-                console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
-                               
-              }, 2000)
-            } else 
-              console.log(`[${bot.username}]  Không mở được hub`)
-          }, 2000)
-        }, 3000)
-      })
+      resetAllBots()
       return
     }
 
