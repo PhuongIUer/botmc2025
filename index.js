@@ -191,8 +191,16 @@ function setupBotEvents(bot) {
     }, 3000)
   }
 
-  bot.on('kicked', reason => console.log(`[${bot.username}] Bị kick:`, reason))
-  bot.on('error', err => console.log(`[${bot.username}] Lỗi:`, err))
+  bot.on('kicked', reason => {
+    console.log(`[${bot.username}] Bị kick:`, reason)
+    resetAllBots()
+  })
+  
+  bot.on('error', err => {
+    console.log(`[${bot.username}] Lỗi:`, err)
+    resetAllBots()
+  })
+
   bot.on('end', () => console.log(`[${bot.username}] Đã ngắt kết nối`))
 }
 
@@ -203,9 +211,9 @@ botConfigs.forEach((config, index) => {
 })
 
 // ========== THIẾT LẬP RESET ĐỊNH KỲ 40 PHÚT ==========
-resetIntervalId = setInterval(() => {
-  resetAllBots()
-}, 41 * 60 * 1000) // 40 phút
+// resetIntervalId = setInterval(() => {
+//   resetAllBots()
+// }, 41 * 60 * 1000) // 40 phút
 
 // ========== XỬ LÝ TẮT SCRIPT ==========
 process.on('SIGINT', () => {
