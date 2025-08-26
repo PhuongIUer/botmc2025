@@ -1,0 +1,32 @@
+{
+  "server": {
+    "host": "luckyvn.com",
+    "port": 25565,
+    "version": "1.21.4"
+  },
+  "botConfigs": [
+    { "username": "nobody01", "password": "11092003" },
+    { "username": "nobody02", "password": "11092003" },
+    { "username": "nobody03", "password": "11092003" },
+    { "username": "nobody04", "password": "11092003" }
+  ],
+  "intervals": {
+    "botStartDelay": 30000,
+    "messageTimeout": 5000,
+    "globalLog": 600000
+  },
+  "positions": {
+    "target": {
+      "x": -2,
+      "y": 65,
+      "z": -3
+    },
+    "guiClicks": [
+      { "slot": 22, "description": "ô cột 5 hàng 3" },
+      { "slot": 30, "description": "ô cột 4 hàng 4" }
+    ]
+  },
+  "hotbar": {
+    "initialSlot": 4
+  }
+}

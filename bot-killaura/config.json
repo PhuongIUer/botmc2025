@@ -1,0 +1,40 @@
+{
+  "server": {
+    "host": "luckyvn.com",
+    "port": 25565,
+    "version": "1.21.4"
+  },
+  "botConfigs": [
+    { 
+      "username": "ShiKuu", 
+      "password": "ititiu21286", 
+      "special": true 
+    }
+  ],
+  "intervals": {
+    "botStartDelay": 30000,
+    "hotbarLog": 30000,
+    "autoEatCheck": 15000,
+    "attackDelayMin": 3000,
+    "attackDelayMax": 3500,
+    "attackPatternReset": 30000,
+    "globalLog": 600000,
+    "autoReset": 2400000
+  },
+  "positions": {
+    "target": {
+      "x": -2,
+      "y": 65,
+      "z": -3
+    },
+    "guiClicks": [
+      { "slot": 22, "description": "ô cột 5 hàng 3" },
+      { "slot": 30, "description": "ô cột 4 hàng 4" }
+    ]
+  },
+  "settings": {
+    "foodThreshold": 12,
+    "attackRange": 5,
+    "criticalHitCycles": 50
+  }
+}

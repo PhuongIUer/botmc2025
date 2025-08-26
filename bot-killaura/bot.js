@@ -1,16 +1,12 @@
 const mineflayer = require('mineflayer')
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder')
+const config = require('../config.json')
 
 // ========== TẮT CẢNH BÁO PARTIAL PACKET ==========
 process.setMaxListeners(50)
 process.on('warning', (warning) => {
   if (warning.message.includes('partial packet')) return
 })
-
-// ========== DANH SÁCH BOT ==========
-const botConfigs = [
-  { username: 'ShiKuu', password: 'ititiu21286', special: true } // Bot đặc biệt
-]
 
 let bots = []
 let completedBots = 0
@@ -55,28 +51,28 @@ async function resetAllBots() {
   
   // Khởi động lại tất cả bot
   console.log('🔄 Khởi động lại tất cả bot...')
-  botConfigs.forEach((config, index) => {
-    createBotWithDelay(config, index * 30000, index)
+  config.botConfigs.forEach((botConfig, index) => {
+    createBotWithDelay(botConfig, index * config.intervals.botStartDelay, index)
   })
 }
 
 // ========== HÀM TẠO BOT ==========
-function createBotWithDelay(config, delay, index) {
+function createBotWithDelay(botConfig, delay, index) {
   setTimeout(() => {
-    console.log(`🚀 Khởi động bot: ${config.username}`)
+    console.log(`🚀 Khởi động bot: ${botConfig.username}`)
     
     const botOptions = {
-      host: 'luckyvn.com',
-      port: 25565,
-      username: config.username,
-      version: '1.21.4',
+      host: config.server.host,
+      port: config.server.port,
+      username: botConfig.username,
+      version: config.server.version,
       keepAlive: true,         
       checkTimeoutInterval: 120 * 1000  
     }
 
     const bot = mineflayer.createBot(botOptions)
     bot.loadPlugin(pathfinder)
-    bot.botConfig = config
+    bot.botConfig = botConfig
 
     // Tắt cảnh báo partial packet
     bot._client.on('error', (err) => {
@@ -89,7 +85,7 @@ function createBotWithDelay(config, delay, index) {
 }
 
 function startHotbarLogger(bot) {
-  console.log(`[${bot.username}] 📦 Bắt đầu log thông tin hotbar mỗi 30 giây`)
+  console.log(`[${bot.username}] 📦 Bắt đầu log thông tin hotbar mỗi ${config.intervals.hotbarLog/1000} giây`)
 
   const logHotbarItems = () => {
     // Hotbar: slots 36 đến 44
@@ -102,15 +98,15 @@ function startHotbarLogger(bot) {
     console.log(`[${bot.username}] 🎒 HOTBAR: ${items.join(' | ')}`)
   }
 
-  // Thiết lập interval mỗi 30 giây
-  return setInterval(logHotbarItems, 30 * 1000)
+  // Thiết lập interval
+  return setInterval(logHotbarItems, config.intervals.hotbarLog)
 }
 
 // ========== HÀM TỰ ĐỘNG ĂN STEAK ==========
 async function autoEatSteak(bot) {
   try {
-    // Nếu food <= 12 thì ăn
-    if (bot.food <= 12) {
+    // Nếu food <= threshold thì ăn
+    if (bot.food <= config.settings.foodThreshold) {
       console.log(`[${bot.username}] 🍗 Đang đói (${bot.food}/20), tìm steak...`)
 
       // Slot cuối cùng của inventory = 44
@@ -136,10 +132,11 @@ async function autoEatSteak(bot) {
     console.log(`[${bot.username}] ⚠️ Lỗi khi auto ăn:`, err)
   }
 }
+
 // ========== TÌM ENTITY GẦN NHẤT NGOẠI TRỪ PLAYER ==========
 function findNearestEntityExceptPlayer(bot) {
-  const entityFilter = e => e.type !== 'player' && e.displayName !== 'Text Display' && 
-                          e.position.distanceTo(bot.entity.position) < 5 
+  const entityFilter = e => e.type !== 'player' && e.displayName !== 'Text Display'&& e.displayName !== 'Item' && 
+                          e.position.distanceTo(bot.entity.position) < config.settings.attackRange
   
   const entity = bot.nearestEntity(entityFilter)
   return entity
@@ -168,10 +165,10 @@ function startRandomAttacking(bot) {
       return
     }
 
-    const cycle = attackCount % 60 // 0 → 99
+    const cycle = attackCount % 100
 
-    if (cycle < 50) {
-      // 50 đòn đầu: CRITICAL
+    if (cycle < config.settings.criticalHitCycles) {
+      // Critical hits
       bot.setControlState('jump', true)
       setTimeout(() => bot.setControlState('jump', false), 100)
 
@@ -183,7 +180,7 @@ function startRandomAttacking(bot) {
       }, 400)
 
     } else {
-      // 50 đòn sau: NORMAL
+      // Normal hits
       bot.attack(entity)
       attackCount++
       console.log(`[${bot.username}] 🗡️ Normal hit vào ${entity.displayName} (lần ${attackCount})`)
@@ -191,20 +188,20 @@ function startRandomAttacking(bot) {
   }
 
   const startAttackInterval = () => {
-    const delay = 3000 + Math.random() * 500 // 2s → 3.5s
+    const delay = config.intervals.attackDelayMin + Math.random() * (config.intervals.attackDelayMax - config.intervals.attackDelayMin)
     attackInterval = setInterval(attack, delay)
     console.log(`[${bot.username}] ⏰ Tấn công mỗi ~${delay.toFixed(0)}ms`)
   }
 
   startAttackInterval()
 
-  // Reset interval mỗi 30 giây để delay thay đổi
+  // Reset interval để delay thay đổi
   resetAttackInterval = setInterval(() => {
     if (attackInterval) {
       clearInterval(attackInterval)
       startAttackInterval()
     }
-  }, 30000)
+  }, config.intervals.attackPatternReset)
 
   // Hàm dừng
   return () => {
@@ -222,7 +219,7 @@ function startRandomAttacking(bot) {
 
 // ========== KIỂM TRA TẤT CẢ BOT ĐÃ HOÀN THÀNH ==========
 function checkAllBotsCompleted() {
-  if (completedBots === botConfigs.length && !allBotsCompleted) {
+  if (completedBots === config.botConfigs.length && !allBotsCompleted) {
     allBotsCompleted = true
     
     // Đợi 3 giây trước khi clear terminal
@@ -244,7 +241,7 @@ function checkAllBotsCompleted() {
         const timeString = now.toLocaleTimeString('vi-VN')
         console.log(`📢 10p lần ${count} : ${timeString}`)
         count++
-      }, 10 * 60 * 1000) // 10 phút
+      }, config.intervals.globalLog)
     }, 3000) // Đợi 3 giây
   }
 }
@@ -255,33 +252,32 @@ function setupBotEvents(bot) {
   let spawnCount = 0
   bot.stopAttacking = null
 
-
   bot.on('spawn', async () => {
     spawnCount++
     console.log(`[${bot.username}] Đã spawn (lần ${spawnCount})`)
     
-  if (spawnCount === 2 && hasCompletedFirstTask) {
-    completedBots++
-    console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${botConfigs.length})`)
-    
-    // Bắt đầu log hotbar mỗi 1 phút
-    bot.hotbarInterval = startHotbarLogger(bot)
-    
-    // Bắt đầu kiểm tra đói mỗi 5 giây
-    bot.hungerInterval = setInterval(() => autoEatSteak(bot), 15000)
-    console.log(`[${bot.username}] 🍗 Đã bật auto eat (kiểm tra mỗi 15s)`)
+    if (spawnCount === 2 && hasCompletedFirstTask) {
+      completedBots++
+      console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${config.botConfigs.length})`)
+      
+      // Bắt đầu log hotbar
+      bot.hotbarInterval = startHotbarLogger(bot)
+      
+      // Bắt đầu kiểm tra đói
+      bot.hungerInterval = setInterval(() => autoEatSteak(bot), config.intervals.autoEatCheck)
+      console.log(`[${bot.username}] 🍗 Đã bật auto eat (kiểm tra mỗi ${config.intervals.autoEatCheck/1000}s)`)
 
-    bot.setQuickBarSlot(0)
-    console.log(`[${bot.username}] Đã cầm đồ ở ô thứ 1`)
-    // Nếu là bot đặc biệt (ShiKuu), bắt đầu tấn công entity
-    if (bot.botConfig.special && !bot.stopAttacking) {
-      bot.stopAttacking = startRandomAttacking(bot)
+      bot.setQuickBarSlot(0)
+      console.log(`[${bot.username}] Đã cầm đồ ở ô thứ 1`)
+      
+      // Nếu là bot đặc biệt, bắt đầu tấn công entity
+      if (bot.botConfig.special && !bot.stopAttacking) {
+        bot.stopAttacking = startRandomAttacking(bot)
+      }
+      
+      checkAllBotsCompleted()
+      return
     }
-
-    
-    checkAllBotsCompleted()
-    return
-  }
 
     // Spawn lần 1: làm task đầu tiên
     if (spawnCount === 1 && !hasCompletedFirstTask) {
@@ -303,11 +299,15 @@ function setupBotEvents(bot) {
       const movements = new Movements(bot, mcData)
       bot.pathfinder.setMovements(movements)
 
-      const goal = new goals.GoalBlock(-2, 65, -3)
+      const goal = new goals.GoalBlock(
+        config.positions.target.x,
+        config.positions.target.y,
+        config.positions.target.z
+      )
       bot.pathfinder.setGoal(goal)
 
       bot.once('goal_reached', async () => {
-        console.log(`[${bot.username}] Đã tới vị trí (-2, 65, -3)`)
+        console.log(`[${bot.username}] Đã tới vị trí (${config.positions.target.x}, ${config.positions.target.y}, ${config.positions.target.z})`)
         
         bot.setQuickBarSlot(4)
         console.log(`[${bot.username}] Đã cầm đồ ở ô thứ 5`)
@@ -317,19 +317,21 @@ function setupBotEvents(bot) {
 
           setTimeout(() => {
             if (bot.currentWindow) {
-              bot.clickWindow(22, 0, 0)
-              console.log(`[${bot.username}] Đã click ô cột 5 hàng 3`)
-              
-              setTimeout(() => {
-                bot.clickWindow(30, 0, 0)
-                console.log(`[${bot.username}] Đã click ô cột 4 hàng 4`)
-                
-                hasCompletedFirstTask = true
-                console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
-                               
-              }, 2000)
-            } else 
+              // Click vào các ô GUI được định nghĩa trong config
+              config.positions.guiClicks.forEach((click, index) => {
+                setTimeout(() => {
+                  bot.clickWindow(click.slot, 0, 0)
+                  console.log(`[${bot.username}] Đã click ${click.description}`)
+                  
+                  if (index === config.positions.guiClicks.length - 1) {
+                    hasCompletedFirstTask = true
+                    console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
+                  }
+                }, 2000 * (index + 1))
+              })
+            } else {
               console.log(`[${bot.username}]  Không mở được hub`)
+            }
           }, 2000)
         }, 3000)
       })
@@ -357,6 +359,7 @@ function setupBotEvents(bot) {
     if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
     if (bot.hungerInterval) clearInterval(bot.hungerInterval)
     if (bot.attackInterval) clearInterval(bot.attackInterval)
+    resetAllBots()
   })
 
   bot.on('end', () => {
@@ -370,7 +373,7 @@ function setupBotEvents(bot) {
     if (bot.attackInterval) clearInterval(bot.attackInterval)
   })
 
-    bot.on('quit', () => {
+  bot.on('quit', () => {
     console.log(`[${bot.username}] Đã tự thoát`)
     if (bot.stopAttacking) {
       bot.stopAttacking()
@@ -383,15 +386,15 @@ function setupBotEvents(bot) {
 }
 
 // ========== KHỞI CHẠY TẤT CẢ BOT ==========
-console.log(`🟢 Bắt đầu khởi chạy ${botConfigs.length} bot...`)
-botConfigs.forEach((config, index) => {
-  createBotWithDelay(config, index * 30000, index)
+console.log(`🟢 Bắt đầu khởi chạy ${config.botConfigs.length} bot...`)
+config.botConfigs.forEach((botConfig, index) => {
+  createBotWithDelay(botConfig, index * config.intervals.botStartDelay, index)
 })
 
-// ========== THIẾT LẬP RESET ĐỊNH KỲ 40 PHÚT ==========
+// ========== THIẾT LẬP RESET ĐỊNH KỲ ==========
 resetIntervalId = setInterval(() => {
   resetAllBots()
-}, 40 * 60 * 1000) // 40 phút
+}, config.intervals.autoReset)
 
 // ========== XỬ LÝ TẮT SCRIPT ==========
 process.on('SIGINT', () => {

@@ -1,19 +1,12 @@
 const mineflayer = require('mineflayer')
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder')
+const config = require('./config.json')
 
 // ========== TẮT CẢNH BÁO PARTIAL PACKET ==========
 process.setMaxListeners(50)
 process.on('warning', (warning) => {
   if (warning.message.includes('partial packet')) return
 })
-
-// ========== DANH SÁCH BOT ==========
-const botConfigs = [
-  { username: 'nobody01', password: '11092003' },
-  { username: 'nobody02', password: '11092003' },
-  { username: 'nobody03', password: '11092003' },
-  { username: 'nobody04', password: '11092003' },
-]
 
 let bots = []
 let completedBots = 0
@@ -23,7 +16,6 @@ let globalIntervalId = null
 // ========== QUẢN LÝ TIN NHẮN CHAT ==========
 const processedMessages = new Set()
 const messageTimestamps = new Map()
-const MESSAGE_TIMEOUT = 5000 // 5 giây
 
 async function resetAllBots() {
   console.log('🔄 Bắt đầu reset tất cả bot...')
@@ -56,8 +48,8 @@ async function resetAllBots() {
   
   // Khởi động lại tất cả bot
   console.log('🔄 Khởi động lại tất cả bot...')
-  botConfigs.forEach((config, index) => {
-    createBotWithDelay(config, index * 30000, index)
+  config.botConfigs.forEach((botConfig, index) => {
+    createBotWithDelay(botConfig, index * config.intervals.botStartDelay, index)
   })
 }
 
@@ -74,7 +66,7 @@ function isDuplicateMessage(hash) {
   // Xóa tin nhắn cũ sau timeout
   const now = Date.now()
   for (const [msgHash, timestamp] of messageTimestamps.entries()) {
-    if (now - timestamp > MESSAGE_TIMEOUT) {
+    if (now - timestamp > config.intervals.messageTimeout) {
       messageTimestamps.delete(msgHash)
       processedMessages.delete(msgHash)
     }
@@ -94,20 +86,20 @@ function clearTerminal() {
 }
 
 // ========== HÀM TẠO BOT ==========
-function createBotWithDelay(config, delay, index) {
+function createBotWithDelay(botConfig, delay, index) {
   setTimeout(() => {
-    console.log(`🚀 Khởi động bot: ${config.username}`)
+    console.log(`🚀 Khởi động bot: ${botConfig.username}`)
     
     const botOptions = {
-      host: 'luckyvn.com',
-      port: 25565,
-      username: config.username,
-      version: '1.21.4'
+      host: config.server.host,
+      port: config.server.port,
+      username: botConfig.username,
+      version: config.server.version
     }
 
     const bot = mineflayer.createBot(botOptions)
     bot.loadPlugin(pathfinder)
-    bot.botConfig = config
+    bot.botConfig = botConfig
     bot.botIndex = index // Thêm index để quản lý
 
     // Tắt cảnh báo partial packet
@@ -122,7 +114,7 @@ function createBotWithDelay(config, delay, index) {
 
 // ========== KIỂM TRA TẤT CẢ BOT ĐÃ HOÀN THÀNH ==========
 function checkAllBotsCompleted() {
-  if (completedBots === botConfigs.length && !allBotsCompleted) {
+  if (completedBots === config.botConfigs.length && !allBotsCompleted) {
     allBotsCompleted = true
     
     // Đợi 3 giây trước khi clear terminal
@@ -144,7 +136,7 @@ function checkAllBotsCompleted() {
         const timeString = now.toLocaleTimeString('vi-VN')
         console.log(`📢 10p lần ${count} : ${timeString}`)
         count++
-      }, 10 * 60 * 1000) // 10 phút
+      }, config.intervals.globalLog)
     }, 3000) // Đợi 3 giây
   }
 }
@@ -184,7 +176,7 @@ function setupBotEvents(bot) {
     // Nếu đã hoàn thành task đầu tiên (spawn lần 2)
     if (spawnCount >= 2 && hasCompletedFirstTask) {
       completedBots++
-      console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${botConfigs.length})`)
+      console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${config.botConfigs.length})`)
 
       checkAllBotsCompleted()
       return
@@ -210,14 +202,18 @@ function setupBotEvents(bot) {
       const movements = new Movements(bot, mcData)
       bot.pathfinder.setMovements(movements)
 
-      const goal = new goals.GoalBlock(-2, 65, -3)
+      const goal = new goals.GoalBlock(
+        config.positions.target.x,
+        config.positions.target.y,
+        config.positions.target.z
+      )
       bot.pathfinder.setGoal(goal)
 
       bot.once('goal_reached', async () => {
-        console.log(`[${bot.username}] Đã tới vị trí (-2, 65, -3)`)
+        console.log(`[${bot.username}] Đã tới vị trí (${config.positions.target.x}, ${config.positions.target.y}, ${config.positions.target.z})`)
         
-        bot.setQuickBarSlot(4)
-        console.log(`[${bot.username}] Đã cầm đồ ở ô thứ 5`)
+        bot.setQuickBarSlot(config.hotbar.initialSlot)
+        console.log(`[${bot.username}] Đã cầm đồ ở ô thứ ${config.hotbar.initialSlot + 1}`)
 
         setTimeout(() => {
           bot.activateItem()
@@ -225,18 +221,21 @@ function setupBotEvents(bot) {
 
           setTimeout(() => {
             if (bot.currentWindow) {
-              bot.clickWindow(22, 0, 0)
-              console.log(`[${bot.username}] Đã click ô cột 5 hàng 3`)
-              
-              setTimeout(() => {
-                bot.clickWindow(30, 0, 0)
-                console.log(`[${bot.username}] Đã click ô cột 4 hàng 4`)
-                
-                hasCompletedFirstTask = true
-                console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
-                               
-              }, 2000)
-            } else console.log(`[${bot.username}] Không mở dc HUB`)
+              // Click vào các ô GUI được định nghĩa trong config
+              config.positions.guiClicks.forEach((click, index) => {
+                setTimeout(() => {
+                  bot.clickWindow(click.slot, 0, 0)
+                  console.log(`[${bot.username}] Đã click ${click.description}`)
+                  
+                  if (index === config.positions.guiClicks.length - 1) {
+                    hasCompletedFirstTask = true
+                    console.log(`[${bot.username}] ✅ Đã hoàn thành task đầu tiên`)
+                  }
+                }, 2000 * (index + 1))
+              })
+            } else {
+              console.log(`[${bot.username}] Không mở dc HUB`)
+            }
           }, 3000)
         }, 1000)
       })
@@ -247,17 +246,19 @@ function setupBotEvents(bot) {
     console.log(`[${bot.username}] Bị kick:`, reason)
     resetAllBots()
   })
+  
   bot.on('error', err => {
     console.log(`[${bot.username}] Lỗi:`, err)
     resetAllBots()
   })
+  
   bot.on('end', () => console.log(`[${bot.username}] Đã ngắt kết nối`))
 }
 
 // ========== KHỞI CHẠY TẤT CẢ BOT ==========
-console.log(`🟢 Bắt đầu khởi chạy ${botConfigs.length} bot...`)
-botConfigs.forEach((config, index) => {
-  createBotWithDelay(config, index * 30000, index)
+console.log(`🟢 Bắt đầu khởi chạy ${config.botConfigs.length} bot...`)
+config.botConfigs.forEach((botConfig, index) => {
+  createBotWithDelay(botConfig, index * config.intervals.botStartDelay, index)
 })
 
 // ========== XỬ LÝ TẮT SCRIPT ==========
