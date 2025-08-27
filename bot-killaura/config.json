@@ -13,7 +13,7 @@
   ],
   "intervals": {
     "botStartDelay": 30000,
-    "hotbarLog": 30000,
+    "InvLog": 30000,
     "autoEatCheck": 15000,
     "attackDelayMin": 3000,
     "attackDelayMax": 3100,

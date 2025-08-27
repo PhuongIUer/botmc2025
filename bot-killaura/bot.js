@@ -84,22 +84,32 @@ function createBotWithDelay(botConfig, delay, index) {
   }, delay)
 }
 
-function startHotbarLogger(bot) {
-  console.log(`[${bot.username}] 📦 Bắt đầu log thông tin hotbar mỗi ${config.intervals.hotbarLog/1000} giây`)
+function startInvLogger(bot) {
+  console.log(`[${bot.username}] 📦 Bắt đầu log thông tin inv mỗi ${config.intervals.InvLog/1000} giây`)
 
-  const logHotbarItems = () => {
-    // Hotbar: slots 36 đến 44
-    const hotbarSlots = Array.from({ length: 45 }, (_, i) => i )
-    const items = hotbarSlots.map(slot => {
+  const logInvItems = () => {
+    // Inv: slots 36 đến 44
+    const InvSlots = Array.from({ length: 45 }, (_, i) => i + 10)
+    const items = InvSlots.map(slot => {
       const item = bot.inventory.slots[slot]
+
+      // ✅ Nếu có player_head thì vứt luôn
+      if (item && item.name === 'player_head') {
+        bot.tossStack(item).then(() => {
+          console.log(`[${bot.username}] 🗑️ Đã vứt player_head (x${item.count})`)
+        }).catch(err => {
+          console.log(`[${bot.username}] ⚠️ Lỗi khi vứt player_head:`, err.message)
+        })
+      }
+
       return item ? `${item.name} (x${item.count})` : 'Trống'
     })
     
-    console.log(`[${bot.username}] 🎒 HOTBAR: ${items.join(' | ')}`)
+    console.log(`[${bot.username}] 🎒 Inv: ${items.join(' | ')}`)
   }
 
   // Thiết lập interval
-  return setInterval(logHotbarItems, config.intervals.hotbarLog)
+  return setInterval(logInvItems, config.intervals.InvLog)
 }
 
 // ========== HÀM TỰ ĐỘNG ĂN STEAK ==========
@@ -124,9 +134,9 @@ async function autoEatSteak(bot) {
       await bot.consume()
       console.log(`[${bot.username}] ✅ Đã ăn steak`)
 
-      // Chỉnh lại về hotbar slot 1 (index = 0)
+      // Chỉnh lại về Inv slot 1 (index = 0)
       bot.setQuickBarSlot(0)
-      console.log(`[${bot.username}] 🔄 Đã đổi lại về hotbar slot 1`)
+      console.log(`[${bot.username}] 🔄 Đã đổi lại về Inv slot 1`)
     }
   } catch (err) {
     console.log(`[${bot.username}] ⚠️ Lỗi khi auto ăn:`, err)
@@ -260,8 +270,8 @@ function setupBotEvents(bot) {
       completedBots++
       console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${config.botConfigs.length})`)
       
-      // Bắt đầu log hotbar
-      bot.hotbarInterval = startHotbarLogger(bot)
+      // Bắt đầu log Inv
+      bot.InvInterval = startInvLogger(bot)
       
       // Bắt đầu kiểm tra đói
       bot.hungerInterval = setInterval(() => autoEatSteak(bot), config.intervals.autoEatCheck)
@@ -344,7 +354,7 @@ function setupBotEvents(bot) {
       bot.stopAttacking()
       bot.stopAttacking = null
     }
-    if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
+    if (bot.InvInterval) clearInterval(bot.InvInterval)
     if (bot.hungerInterval) clearInterval(bot.hungerInterval)
     if (bot.attackInterval) clearInterval(bot.attackInterval)
     resetAllBots()
@@ -356,7 +366,7 @@ function setupBotEvents(bot) {
       bot.stopAttacking()
       bot.stopAttacking = null
     }
-    if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
+    if (bot.InvInterval) clearInterval(bot.InvInterval)
     if (bot.hungerInterval) clearInterval(bot.hungerInterval)
     if (bot.attackInterval) clearInterval(bot.attackInterval)
     resetAllBots()
@@ -368,7 +378,7 @@ function setupBotEvents(bot) {
       bot.stopAttacking()
       bot.stopAttacking = null
     }
-    if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
+    if (bot.InvInterval) clearInterval(bot.InvInterval)
     if (bot.hungerInterval) clearInterval(bot.hungerInterval)
     if (bot.attackInterval) clearInterval(bot.attackInterval)
   })
@@ -379,7 +389,7 @@ function setupBotEvents(bot) {
       bot.stopAttacking()
       bot.stopAttacking = null
     }
-    if (bot.hotbarInterval) clearInterval(bot.hotbarInterval)
+    if (bot.InvInterval) clearInterval(bot.InvInterval)
     if (bot.hungerInterval) clearInterval(bot.hungerInterval)
     if (bot.attackInterval) clearInterval(bot.attackInterval)
   })
