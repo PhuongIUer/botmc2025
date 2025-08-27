@@ -16,7 +16,7 @@
     "hotbarLog": 30000,
     "autoEatCheck": 15000,
     "attackDelayMin": 3000,
-    "attackDelayMax": 3500,
+    "attackDelayMax": 3100,
     "attackPatternReset": 30000,
     "globalLog": 600000,
     "autoReset": 2400000
@@ -35,6 +35,6 @@
   "settings": {
     "foodThreshold": 12,
     "attackRange": 5,
-    "criticalHitCycles": 50
+    "criticalHitCycles": 0
   }
 }

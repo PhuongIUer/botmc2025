@@ -1,6 +1,6 @@
 const mineflayer = require('mineflayer')
 const { pathfinder, Movements, goals } = require('mineflayer-pathfinder')
-const config = require('../config.json')
+const config = require('./config.json')
 
 // ========== TẮT CẢNH BÁO PARTIAL PACKET ==========
 process.setMaxListeners(50)
