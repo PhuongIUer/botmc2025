@@ -5,11 +5,11 @@
     "version": "1.21.4"
   },
   "bots": [
-    { "username": "nobody05", "password": "11092003" },
-    { "username": "nobody06", "password": "11092003" },
-    { "username": "nobody07", "password": "11092003" },
-    { "username": "nobody08", "password": "11092003" },
-    { "username": "nobody09", "password": "11092003" }
+    { "username": "nobody10", "password": "11092003" },
+    { "username": "nobody11", "password": "11092003" },
+    { "username": "nobody12", "password": "11092003" },
+    { "username": "nobody13", "password": "11092003" },
+    { "username": "nobody14", "password": "11092003" }
   ],
   "settings": {
     "botStartDelay": 10000,
