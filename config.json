@@ -1,0 +1,29 @@
+{
+  "server": {
+    "host": "luckyvn.com",
+    "port": 25565,
+    "version": "1.21.4"
+  },
+  "bots": [
+    { "username": "tututhoi1", "password": "112113" },
+    { "username": "tututhoi2", "password": "112113" },
+    { "username": "tututhoi3", "password": "112113" },
+    { "username": "tututhoi4", "password": "112113" },
+    { "username": "tututhoi5", "password": "112113" }
+  ],
+  "settings": {
+    "botStartDelay": 10000,
+    "resetInterval": 2400000,
+    "logInterval": 600000,
+    "firstTaskDelay": 2000,
+    "movementTimeout": 30000,
+    "retryDelay": 5000
+  },
+  "coordinates": {
+    "goal": { "x": -2, "y": 65, "z": -3 }
+  },
+  "inventory": {
+    "hotbarSlot": 4,
+    "clickSlots": [22, 30]
+  }
+}
