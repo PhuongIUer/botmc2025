@@ -29,9 +29,11 @@ async function resetAllBots() {
   // Ngắt kết nối tất cả bot
   for (const bot of bots) {
     try {
+      // Khi muốn ngắt kết nối bot thủ công (từ script)
       if (bot && typeof bot.quit === 'function') {
+        bot.isQuit = true   // <--- đánh dấu là quit chủ động
         bot.quit()
-        console.log(`[${bot.username}] Đã ngắt kết nối`)
+        console.log(`[${bot.username}] Đã ngắt kết nối (do script)`)
       }
     } catch (err) {
       console.log(`Lỗi khi ngắt kết nối bot: ${err.message}`)
@@ -252,7 +254,12 @@ function setupBotEvents(bot) {
     resetAllBots()
   })
   
-  bot.on('end', () => console.log(`[${bot.username}] Đã ngắt kết nối`))
+  bot.on('end', () => {
+  if (!bot.isQuit) {
+    console.log(`[${bot.username}] Đã ngắt kết nối (bất thường)`)
+    resetAllBots()
+  }
+})
 }
 
 // ========== KHỞI CHẠY TẤT CẢ BOT ==========
@@ -276,3 +283,4 @@ process.on('SIGINT', () => {
   
   setTimeout(() => process.exit(), 1000)
 })
+
