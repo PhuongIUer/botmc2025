@@ -266,7 +266,7 @@ function setupBotEvents(bot) {
     spawnCount++
     console.log(`[${bot.username}] Đã spawn (lần ${spawnCount})`)
     
-    if (spawnCount === 2 && hasCompletedFirstTask) {
+    if (spawnCount >= 2 && hasCompletedFirstTask) {
       completedBots++
       console.log(`[${bot.username}] ✅ Đã hoàn thành nhiệm vụ (${completedBots}/${config.botConfigs.length})`)
       
