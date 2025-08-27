@@ -13,9 +13,6 @@ const botManager = new BotManager(config);
 // Bắt đầu các bot
 botManager.startBots();
 
-// Thiết lập reset định kỳ
-botManager.setupPeriodicReset();
-
 // Xử lý tắt script
 process.on('SIGINT', () => {
   botManager.shutdown();
