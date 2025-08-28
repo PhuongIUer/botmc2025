@@ -14,7 +14,7 @@
   "settings": {
     "botStartDelay": 10000,
     "resetInterval": 2400000,
-    "logInterval": 600000,
+    "logInterval": 60000,
     "firstTaskDelay": 2000,
     "movementTimeout": 30000,
     "retryDelay": 5000
